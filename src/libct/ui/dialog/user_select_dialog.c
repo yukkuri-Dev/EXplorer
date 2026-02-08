@@ -26,6 +26,7 @@ int user_select_dialog(const char **names, int count){
     lcdc_copy_vram();
 
     int selected = 0;
+    int prev_selected = 0;
     int scroll = 0;
 
     /* initial draw */
@@ -50,6 +51,7 @@ int user_select_dialog(const char **names, int count){
         }
         if (get_key_state(KEY_UP)) {
             if (selected > 0) {
+                int old = selected;
                 --selected;
                 if (selected < scroll) {
                     scroll = selected;
@@ -61,15 +63,21 @@ int user_select_dialog(const char **names, int count){
                         render_text(10, 30 + i * (fnt->height + 2), (char *)name);
                     }
                 }
-                /* update cursor */
-                ct_screen_rect(0, 30, fnt->width + 4, fnt->height, create_rgb16(0,0,0));
+                /* clear previous cursor if it was visible */
+                int prev_screen_pos = old - scroll;
+                if (prev_screen_pos >= 0 && prev_screen_pos < MAX_DISPLAY_ITEMS) {
+                    ct_screen_rect(0, 30 + prev_screen_pos * (fnt->height + 2), fnt->width + 4, fnt->height + 2, create_rgb16(0,0,0));
+                }
+                /* draw new cursor */
                 ct_print(0, 30 + (selected - scroll) * (fnt->height + 2), ">", create_rgb16(0,0,255));
                 lcdc_copy_vram();
+                prev_selected = selected;
             }
             while (get_key_state(KEY_UP)) keypad_read();
         }
         if (get_key_state(KEY_DOWN)) {
             if (selected < count - 1) {
+                int old = selected;
                 ++selected;
                 if (selected >= scroll + MAX_DISPLAY_ITEMS) {
                     scroll = selected - MAX_DISPLAY_ITEMS + 1;
@@ -81,10 +89,15 @@ int user_select_dialog(const char **names, int count){
                         render_text(10, 30 + i * (fnt->height + 2), (char *)name);
                     }
                 }
-                /* update cursor */
-                ct_screen_rect(0, 30, fnt->width + 4, fnt->height, create_rgb16(0,0,0));
+                /* clear previous cursor if it was visible */
+                int prev_screen_pos = old - scroll;
+                if (prev_screen_pos >= 0 && prev_screen_pos < MAX_DISPLAY_ITEMS) {
+                    ct_screen_rect(0, 30 + prev_screen_pos * (fnt->height + 2), fnt->width + 4, fnt->height + 2, create_rgb16(0,0,0));
+                }
+                /* draw new cursor */
                 ct_print(0, 30 + (selected - scroll) * (fnt->height + 2), ">", create_rgb16(0,0,255));
                 lcdc_copy_vram();
+                prev_selected = selected;
             }
             while (get_key_state(KEY_DOWN)) keypad_read();
         }

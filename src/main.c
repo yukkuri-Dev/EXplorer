@@ -13,10 +13,12 @@
 #include <libct/input.h>
 #include <libct/ui/dialog/user_input_dialog.h>
 #include <libct/ui/dialog/user_select_dialog.h>
+#include <libct/ui/dialog/system_storage_info.h>
 #define SCREEN_WIDTH 528
 #define SCREEN_HEIGHT 320
 #define MAX_DISPLAY 15  // 画面に表示する最大ファイル数
 #define MAX_FILES 100   // 読み込む最大ファイル数
+
 
 struct file_list_result current_files = {0};
 int scroll_offset = 0;
@@ -271,63 +273,55 @@ int main(void) {
               
           }
         }
-        if (get_key_state(KEY_RIGHT)){// 新しい要素を作成
+        if (get_key_state(KEY_RIGHT)){// サブメニュー（ファイル/ディレクトリ作成）
             const char *items[] = {
                 "Create File",
                 "Create Directory",
+                "About Storage Limits(MiB)",
+                "About Storage Limits(KiB)",
+                "About Storage Limits(bytes)",
             };
-            int sel = user_select_dialog(items, 2);
-            char *file_name = user_input_dialog();
-            if (file_name == NULL) {
-                ct_print(10, SCREEN_HEIGHT - fnt->height - 40, "File creation cancelled.", create_rgb16(255,0,0));
-                while (get_key_state(KEY_RIGHT))
-                {
-                    keypad_read();
-                }
-                return 0;
-            }
-            if (file_name[0] == '\0') {
-                ct_print(10, SCREEN_HEIGHT - fnt->height - 40, "File name cannot be empty!", create_rgb16(255,0,0));
-                while (get_key_state(KEY_RIGHT))
-                {
-                    keypad_read();
-                }
-                return 0;
-            }
-            int rc = -1;
-            if (sel == 1) {
-                // ディレクトリ作成
-                rc = directory_create(path, file_name);
-            }else {
-                rc = file_create(path, file_name);
-            }
+            int sel = user_select_dialog(items, 5);
 
-            if (rc < 0){
-              ct_print(10, SCREEN_HEIGHT - fnt->height - 40, "File creation failed!", create_rgb16(255,0,0));
-            } else {
-                refresh_needed = 1;
-                lcdc_copy_vram();
-            }
-            while (get_key_state(KEY_RIGHT))
-            {
-                keypad_read();
-            }
-            /* Mirror KEY_POWER cleanup before exiting */
-            if (current_files.entries) {
-                memmgr_free(current_files.entries);
-                current_files.entries = NULL;
-            }
-            if (path) {
-                free(path);
-                path = NULL;
-            }
-            if (current_files.entries != NULL) {
-                free(current_files.entries);
-                current_files.entries = NULL;
-            }
-            if (path != NULL) {
-                free(path);
-                path = NULL;
+            if(sel == 0 || sel == 1){// ファイルまたはディレクトリ作成
+                int rc = -1;
+                char *file_name = user_input_dialog();
+                if (file_name == NULL) {
+                    ct_print(10, SCREEN_HEIGHT - fnt->height - 40, "File creation cancelled.", create_rgb16(255,0,0));
+                    while (get_key_state(KEY_RIGHT)){
+                        keypad_read();
+                    }
+                    return 0;
+                }
+                if (file_name[0] == '\0') {
+                    ct_print(10, SCREEN_HEIGHT - fnt->height - 40, "File name cannot be empty!", create_rgb16(255,0,0));
+                    while (get_key_state(KEY_RIGHT)){
+                        keypad_read();
+                    }
+                    return 0;
+                }
+                if (sel == 1) {
+                    rc = directory_create(path, file_name);
+                }else if (sel == 0) {
+                    rc = file_create(path, file_name);
+                }
+                if (rc < 0){
+                    ct_print(10, SCREEN_HEIGHT - fnt->height - 40, "File creation failed!", create_rgb16(255,0,0));
+                } else {
+                    refresh_needed = 1;
+                    lcdc_copy_vram();
+                    return 0;
+                }
+
+            }else if (sel == 2){
+                system_storage_info_dialog("MiB");
+                return 0;// ストレージ情報表示
+            }else if (sel == 3){
+                system_storage_info_dialog("KiB");
+                return 0;// ストレージ情報表示
+            }else if (sel == 4){
+                system_storage_info_dialog("bytes");
+                return 0;// ストレージ情報表示
             }
             return 0;
         }
@@ -453,7 +447,7 @@ int main(void) {
                 "[ENTER] Select File/Enter Directory",
                 "[BACK] Go to Root Directory",
                 "[LEFT] Switch to SD Card",
-                "[RIGHT] Create File/Directory",
+                "[RIGHT] Show Submenu (Create File/Directory and ...)",
                 "[BACKSPACE] Delete Selected File/Directory",
                 "[POWER] Exit Application",
             };

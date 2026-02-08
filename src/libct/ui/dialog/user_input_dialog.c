@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <libct/fonts/jpn-font.h>
+#include <stdint.h>
 #define SCREEN_WIDTH 528
 #define SCREEN_HEIGHT 320
 #define MAX_DISPLAY_ITEMS 12
