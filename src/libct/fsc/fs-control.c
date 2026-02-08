@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <syscalls/syscalls.h>
 
+#include <libdataplus/sh4a/input/keypad.h>
+
 #define MAX_FILES 100
 
 int ret, handle;
@@ -78,7 +80,11 @@ struct file_list_result get_file_list(char *search_path){
     
     return result;
 }
-
+int element_delete(char *selected_full){
+    int delete_result = sys_delete(selected_full);
+    return delete_result;
+}
+#define COPY_BUF 4096
 int file_create(char *path,char *file_name){
     char fullpath[128];
     char path_clean[128];
@@ -129,4 +135,49 @@ int directory_create(char *path,char *file_name){
     /* 正しいパスでファイルを作成 */
     int ret = sys_create(fullpath, 5); /* 5 = directory */
     return ret; 
+}
+
+#define SCREEN_WIDTH 528
+#define SCREEN_HEIGHT 320
+
+int file_copy(char *src_path,char *dest_path){
+    char buf[COPY_BUF];
+
+    int fd = sys_open(src_path, FILE_RD);
+    if (fd < 0) {
+        return fd;
+    }
+
+    int ret_create = sys_create(dest_path, 1);
+    if (ret_create < 0) {
+        sys_close(fd);
+        return ret_create;
+    }
+
+    int dest_fd = sys_open(dest_path, FILE_WR);
+    if (dest_fd < 0) {
+        sys_close(fd);
+        return dest_fd;
+    }
+    int filesize = sys_get_filesize(fd);
+    long copied = 0; /* accumulate bytes safely */
+    int unknown_size = 0;
+    if (filesize <= 0) {
+        /* sys_get_filesize failed or returned 0: mark unknown to avoid div-by-zero/negative percent */
+        unknown_size = 1;
+    }
+
+    int r;
+    while ((r = sys_read(fd, buf, sizeof(buf))) > 0) {
+        int w = sys_write(dest_fd, buf, r);
+        if (w != r) {
+            sys_close(fd);
+            sys_close(dest_fd);
+            return -1;
+        }
+    }
+
+    sys_close(fd);
+    sys_close(dest_fd);
+    return 0;
 }

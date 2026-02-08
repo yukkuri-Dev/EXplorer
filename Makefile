@@ -16,7 +16,7 @@ HTMLDIR      := html
 INSTALLDIR   := $(HOME)/.local/share/exword
 BUILDS       := ja cn
 EXCLUDE      :=
-CFILES       := $(filter-out $(EXCLUDE),$(wildcard $(SOURCEDIR)/*.c)) $(wildcard $(SOURCEDIR)/libc/*.c) $(wildcard $(SOURCEDIR)/libct/*.c) $(wildcard $(SOURCEDIR)/libct/fsc/*.c) $(SOURCEDIR)/libct/ui/dialog/user_input_dialog.c $(SOURCEDIR)/libct/ui/dialog/user_select_dialog.c $(SOURCEDIR)/libct/fonts/jpn-font.c $(SOURCEDIR)/libct/ui/dialog/system_storage_info.c
+CFILES       := $(filter-out $(EXCLUDE),$(wildcard $(SOURCEDIR)/*.c)) $(wildcard $(SOURCEDIR)/libc/*.c) $(wildcard $(SOURCEDIR)/libct/*.c) $(wildcard $(SOURCEDIR)/libct/fsc/*.c) $(SOURCEDIR)/libct/ui/dialog/user_input_dialog.c $(SOURCEDIR)/libct/ui/dialog/user_select_dialog.c $(SOURCEDIR)/libct/fonts/jpn-font.c $(SOURCEDIR)/libct/ui/dialog/system_storage_info.c $(SOURCEDIR)/libct/ui/dialog/file_copy.c
 SFILES       := $(wildcard $(SOURCEDIR)/*.s) $(wildcard $(SOURCEDIR)/libc/*.s)
 OBJECTS      := $(CFILES:.c=.o) $(SFILES:.s=.o)
 

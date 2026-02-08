@@ -162,9 +162,63 @@ int main(void) {
         }
         if (get_key_state(KEY_ENTER)){
           // 選択されたファイル名を取得
+          char *selpath = get_selected_fullpath(path);
           char *selected_file = get_selected_filename();
           unsigned long selected_type = get_selected_filetype();
-          
+          if (selected_file != NULL && selected_type == 1) {
+            char info_name[80];
+            char info_size[80];
+            const char *items[] = {
+                info_name,
+                info_size,
+                "Copy to SD Card Root",
+                "Delete File",
+                "[CANCEL]",
+            };
+            sprintf(info_name, "[INFO] File name:%s", selected_file);
+            if (selpath) {
+                int fs = sys_get_filesize(selpath);
+                if (fs >= 0) {
+                    sprintf(info_size, "[INFO] File size: %lu bytes", (unsigned long)fs);
+                } else {
+                    sprintf(info_size, "[INFO] File size: Unknown");
+                }
+                memmgr_free(selpath);
+                selpath = NULL;
+            } else {
+                sprintf(info_size, "[INFO] File size: Unknown");
+            }
+             if (get_key_state(KEY_ENTER)){while(get_key_state(KEY_ENTER)){keypad_read();}}// キーリピート防止
+            int sel = user_select_dialog(items, 5);
+            if (sel ==0 || sel == 1|| sel == 3) {
+                // 情報表示のみ
+                if (sel != 3){
+                    popup_dialog("Hummm? File information displayed.", create_rgb16(0, 255, 0));
+                }
+                refresh_needed = 1;
+                lcdc_copy_vram();
+                return 0;
+            }
+            if (sel == 2){
+                char temp_path[256];
+                sprintf(temp_path, "%s%s", drive[1], selected_file);
+                file_copy_dialog(get_selected_fullpath(path), temp_path);
+            }
+
+          }
+
+
+
+
+
+
+
+
+
+
+
+
+
           if (selected_file != NULL && selected_type == 5) {
               // ディレクトリの場合、そのディレクトリに移動
               char *selected_full = get_selected_fullpath(path);
@@ -459,6 +513,19 @@ int main(void) {
               keypad_read();
           }
           return 0;
+        }
+        if (get_key_state(KEY_CHAR_C)){// Copy関数の作成用（未実装）
+            char src_path[64] ;
+            char dest_path[64] ;
+            sprintf(src_path, "%s%s", drive[0], "C168_NOR.BIN");  // "\\\\sd0\\TEST"
+            sprintf(dest_path, "%s%s", drive[1], "C168_NOR.BIN");  // "\\\\sd0\\TEST2"
+            file_copy(src_path,dest_path);
+            refresh_needed = 1;
+            lcdc_copy_vram();
+            while (get_key_state(KEY_CHAR_C))
+            {
+                keypad_read();
+            }
         }
         if (refresh_needed) {// 画面を更新
             // 前のカーソルを消去（黒で上書き）
