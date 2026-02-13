@@ -421,7 +421,7 @@ int main(void) {
                 current_files.entries = NULL;
             }
             if (path != NULL) {
-                free(path);
+                memmgr_free(path);
                 path = NULL;
             }
             /* Mirror KEY_POWER cleanup before exiting */
@@ -430,7 +430,7 @@ int main(void) {
                 current_files.entries = NULL;
             }
             if (path) {
-                free(path);
+                memmgr_free(path);
                 path = NULL;
             }
             return 0;
