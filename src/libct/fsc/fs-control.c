@@ -141,7 +141,10 @@ int directory_create(char *path,char *file_name){
 #define SCREEN_HEIGHT 320
 
 int file_copy(char *src_path,char *dest_path){
-    char buf[COPY_BUF];
+    char *buf = (char *)memmgr_alloc(COPY_BUF);
+    if (!buf) {
+        return -1;
+    }
 
     int fd = sys_open(src_path, FILE_RD);
     if (fd < 0) {
@@ -151,12 +154,14 @@ int file_copy(char *src_path,char *dest_path){
     int ret_create = sys_create(dest_path, 1);
     if (ret_create < 0) {
         sys_close(fd);
+        memmgr_free(buf);
         return ret_create;
     }
 
     int dest_fd = sys_open(dest_path, FILE_WR);
     if (dest_fd < 0) {
         sys_close(fd);
+        memmgr_free(buf);
         return dest_fd;
     }
     int filesize = sys_get_filesize(fd);
@@ -168,16 +173,38 @@ int file_copy(char *src_path,char *dest_path){
     }
 
     int r;
-    while ((r = sys_read(fd, buf, sizeof(buf))) > 0) {
+    while ((r = sys_read(fd, buf, COPY_BUF)) > 0) {
         int w = sys_write(dest_fd, buf, r);
         if (w != r) {
             sys_close(fd);
             sys_close(dest_fd);
+            memmgr_free(buf);
             return -1;
         }
+        copied += r;
+    }
+    if (r < 0) {
+        memmgr_free(buf);
+        sys_close(fd);
+        sys_close(dest_fd);
+        return -1;
     }
 
     sys_close(fd);
     sys_close(dest_fd);
+    
+    /* Verify written file size */
+    int verify_fd = sys_open(dest_path, FILE_RD);
+    if (verify_fd >= 0) {
+        int final_size = sys_get_filesize(verify_fd);
+        sys_close(verify_fd);
+        if (final_size != copied) {
+            /* Mismatch - file was not fully written */
+            memmgr_free(buf);
+            return -1;
+        }
+    }
+    
+    memmgr_free(buf);
     return 0;
 }

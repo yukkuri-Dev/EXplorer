@@ -163,9 +163,13 @@ int main(void) {
         if (get_key_state(KEY_ENTER)){
           // 選択されたファイル名を取得
           char *selpath = get_selected_fullpath(path);
-          char *selected_file = get_selected_filename();
+          char *selected_file_ptr = get_selected_filename();
+          char selected_file_copy[64] = {0};
+          if (selected_file_ptr) {
+              strncpy(selected_file_copy, selected_file_ptr, sizeof(selected_file_copy) - 1);
+          }
           unsigned long selected_type = get_selected_filetype();
-          if (selected_file != NULL && selected_type == 1) {
+          if (selected_file_ptr != NULL && selected_type == 1) {
             char info_name[80];
             char info_size[80];
             const char *items[] = {
@@ -175,11 +179,17 @@ int main(void) {
                 "Delete File",
                 "[CANCEL]",
             };
-            sprintf(info_name, "[INFO] File name:%s", selected_file);
+            sprintf(info_name, "[INFO] File name:%s", selected_file_copy);
             if (selpath) {
-                int fs = sys_get_filesize(selpath);
-                if (fs >= 0) {
-                    sprintf(info_size, "[INFO] File size: %lu bytes", (unsigned long)fs);
+                int fd = sys_open(selpath, FILE_RD);
+                if (fd >= 0) {
+                    int fs = sys_get_filesize(fd);
+                    if (fs >= 0) {
+                        sprintf(info_size, "[INFO] File size: %lu bytes", (unsigned long)fs);
+                    } else {
+                        sprintf(info_size, "[INFO] File size: Unknown");
+                    }
+                    sys_close(fd);
                 } else {
                     sprintf(info_size, "[INFO] File size: Unknown");
                 }
@@ -200,9 +210,40 @@ int main(void) {
                 return 0;
             }
             if (sel == 2){
-                char temp_path[256];
-                sprintf(temp_path, "%s%s", drive[1], selected_file);
-                file_copy_dialog(get_selected_fullpath(path), temp_path);
+                char temp_path[128];
+                sprintf(temp_path, "%s%s", drive[1], selected_file_copy);
+                char *src_full = get_selected_fullpath(path);
+                if (src_full) {
+                    int copy_result = file_copy_dialog(src_full, temp_path);
+                    if (copy_result == 0) {
+                        popup_dialog("File copied successfully.", create_rgb16(0, 255, 0));
+                    } else if (copy_result == -2) {
+                        popup_dialog("Copy cancelled.", create_rgb16(255, 165, 0));
+                    } else {
+                        popup_dialog("Copy failed.", create_rgb16(255, 0, 0));
+                    }
+                    memmgr_free(src_full);
+                    
+                    /* Reload file list for SD card to show new file */
+                    if (current_files.entries) {
+                        memmgr_free(current_files.entries);
+                        current_files.entries = NULL;
+                    }
+                    
+                    /* Get updated file list from SD card */
+                    char sd_search_path[64];
+                    sprintf(sd_search_path, "%s*", drive[1]);
+                    current_files = get_file_list(sd_search_path);
+                    selected_index = 0;
+                    prev_selected_index = 0;
+                    scroll_offset = 0;
+                    
+                    refresh_needed = 1;
+                    lcdc_copy_vram();
+                } else {
+                    popup_dialog("No source path available.", create_rgb16(255,0,0));
+                }
+                return 0;
             }
 
           }
@@ -216,10 +257,7 @@ int main(void) {
 
 
 
-
-
-
-          if (selected_file != NULL && selected_type == 5) {
+          if (selected_file_ptr != NULL && selected_type == 5) {
               // ディレクトリの場合、そのディレクトリに移動
               char *selected_full = get_selected_fullpath(path);
               if (selected_full != NULL) {
@@ -417,19 +455,10 @@ int main(void) {
             refresh_needed = 1;
             lcdc_copy_vram();
             if (current_files.entries != NULL) {
-                free(current_files.entries);
-                current_files.entries = NULL;
-            }
-            if (path != NULL) {
-                memmgr_free(path);
-                path = NULL;
-            }
-            /* Mirror KEY_POWER cleanup before exiting */
-            if (current_files.entries) {
                 memmgr_free(current_files.entries);
                 current_files.entries = NULL;
             }
-            if (path) {
+            if (path != NULL) {
                 memmgr_free(path);
                 path = NULL;
             }
@@ -439,7 +468,7 @@ int main(void) {
           /* Ensure 'path' buffer is large enough for drive[1] and '*' */
           {
               size_t needed = strlen(drive[1]) + strlen("*") + 1; /* drive + '*' + '\0' */
-              char *new_path = realloc(path, needed);
+              char *new_path = (char *)memmgr_alloc(needed);
               if (!new_path) {
                   /* Allocation failed; abort drive switch to avoid overflow */
                   while (get_key_state(KEY_LEFT))
@@ -447,6 +476,9 @@ int main(void) {
                       keypad_read();
                   }
                   continue;
+              }
+              if (path != NULL) {
+                  memmgr_free(path);
               }
               path = new_path;
           }
