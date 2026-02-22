@@ -176,7 +176,8 @@ int main(void) {
                 info_name,
                 info_size,
                 "Copy to SD Card Root",
-                "Delete File",
+                "Delete File", 
+                "view with Binary Viewer",
                 "[CANCEL]",
             };
             sprintf(info_name, "[INFO] File name:%s", selected_file_copy);
@@ -199,7 +200,7 @@ int main(void) {
                 sprintf(info_size, "[INFO] File size: Unknown");
             }
              if (get_key_state(KEY_ENTER)){while(get_key_state(KEY_ENTER)){keypad_read();}}// キーリピート防止
-            int sel = user_select_dialog(items, 5);
+            int sel = user_select_dialog(items, 6);
             if (sel ==0 || sel == 1|| sel == 3) {
                 // 情報表示のみ
                 if (sel != 3){
@@ -207,6 +208,17 @@ int main(void) {
                 }
                 refresh_needed = 1;
                 lcdc_copy_vram();
+                return 0;
+            }
+            if (sel == 4) {
+                char src_path[64] ;
+                sprintf(src_path, "%s%s", drive[0], selected_file_copy);  // "\\\\sd0\\TEST"
+                while (get_key_state(KEY_ENTER))
+                {
+                    keypad_read();
+                }
+                Binary_viewer(src_path);
+                refresh_needed = 1;
                 return 0;
             }
             if (sel == 2){
@@ -217,12 +229,34 @@ int main(void) {
                     int copy_result = file_copy_dialog(src_full, temp_path);
                     if (copy_result == 0) {
                         popup_dialog("File copied successfully.", create_rgb16(0, 255, 0));
+                        
+                        /* Debug: Check if file actually exists on SD */
+                        int test_fd = sys_open(temp_path, FILE_RD);
+                        if (test_fd >= 0) {
+                            int test_size = sys_get_filesize(test_fd);
+                            sys_close(test_fd);
+                            if (test_size > 0) {
+                                char debug_msg[80];
+                                sprintf(debug_msg, "OK: File exists %d bytes", test_size);
+                                popup_dialog(debug_msg, create_rgb16(0, 255, 255));
+                            }
+                        } else {
+                            popup_dialog("ERROR: File not on SD!", create_rgb16(255, 0, 0));
+                        }
                     } else if (copy_result == -2) {
                         popup_dialog("Copy cancelled.", create_rgb16(255, 165, 0));
                     } else {
                         popup_dialog("Copy failed.", create_rgb16(255, 0, 0));
                     }
                     memmgr_free(src_full);
+                    
+                    /* Force filesystem cache update by touching the directory */
+                    {
+                        int cache_fd = sys_open("\\\\crd0\\", FILE_RD);
+                        if (cache_fd >= 0) {
+                            sys_close(cache_fd);
+                        }
+                    }
                     
                     /* Reload file list for SD card to show new file */
                     if (current_files.entries) {
@@ -238,8 +272,24 @@ int main(void) {
                     prev_selected_index = 0;
                     scroll_offset = 0;
                     
-                    refresh_needed = 1;
+                    /* Full screen redraw */
+                    ct_screen_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, create_rgb16(0, 0, 0));
+                    
+                    set_pen(create_rgb16(255, 255, 0));
+                    char title_buf[80];
+                    sprintf(title_buf, "=== File List: %s ===", sd_search_path);
+                    render_text(10, 10, title_buf);
+                    
+                    if (current_files.count > 0) {
+                        display_file_list(0, fnt, display_name);
+                        sprintf(display_name, "Total: %d files", current_files.count);
+                        ct_print(10, 30 + MAX_DISPLAY * (fnt->height + 2) + 10, display_name, create_rgb16(0, 255, 255));
+                    } else {
+                        ct_print(10, 30, "No files on SD card", create_rgb16(255, 0, 0));
+                    }
+                    
                     lcdc_copy_vram();
+                    return 0;
                 } else {
                     popup_dialog("No source path available.", create_rgb16(255,0,0));
                 }
@@ -372,8 +422,9 @@ int main(void) {
                 "About Storage Limits(MiB)",
                 "About Storage Limits(KiB)",
                 "About Storage Limits(bytes)",
+                "Format SD Card"
             };
-            int sel = user_select_dialog(items, 5);
+            int sel = user_select_dialog(items, 6);
 
             if(sel == 0 || sel == 1){// ファイルまたはディレクトリ作成
                 int rc = -1;
@@ -414,7 +465,11 @@ int main(void) {
             }else if (sel == 4){
                 system_storage_info_dialog("bytes");
                 return 0;// ストレージ情報表示
-            }
+            }else if (sel == 5){
+                            konami_command_warn_dialog();
+                            sys_sdformat();
+                            return 0;
+                        }
             return 0;
         }
         if (get_key_state(KEY_BACKSPACE)){// 選択されたファイルを削除

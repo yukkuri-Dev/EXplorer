@@ -8,7 +8,7 @@
 static const char *drive[2] = {
     "drv0",  // 内蔵ドライブ
     "crd0"   // SDカード
-};//パスを指定するとsyscallが不安定になるためドライブ名のみ使用
+};
 
 unsigned long scale_bytes(unsigned long bytes, const char *unit) {
     if (strcmp(unit, "KiB") == 0) return bytes / 1024UL;
@@ -54,13 +54,17 @@ void format_size(unsigned long bytes, const char *unit,
         buf[off] = '\0';
     }
 
-    strncat(buf, unit, len - strlen(buf) - 1);
+    // 修正：残り容量を正しく計算
+    size_t remaining = (off < len) ? (len - off) : 0;
+    strncat(buf, unit, remaining - 1);
 }
 
 void system_storage_info_dialog(const char *unit) {
     ct_screen_clear(create_rgb16(0,0,0));
 
     char info_buf[9][64];
+    memset(info_buf, 0, sizeof(info_buf));  // ← 初期化を追加
+
     const char *info_items[] = {
         "=== Storage Limits ===",
         "Internal Drive:",
@@ -78,63 +82,88 @@ void system_storage_info_dialog(const char *unit) {
     if (sys_totaldiskspace(drive[0], &total) == 0 &&
         sys_freediskspace(drive[0], &free_spc) == 0) {
         used = total - free_spc;
-        strcpy(info_buf[2], ">Total size: ");
+        
+        // 修正：strncpy を使用してバッファオーバーフロー防止
+        strncpy(info_buf[2], ">Total size: ", sizeof(info_buf[2]) - 1);
+        info_buf[2][sizeof(info_buf[2]) - 1] = '\0';
         format_size(total, unit,
                     info_buf[2] + strlen(info_buf[2]),
                     sizeof(info_buf[2]) - strlen(info_buf[2]));
-        strcpy(info_buf[3], ">Using size: ");
+        
+        strncpy(info_buf[3], ">Using size: ", sizeof(info_buf[3]) - 1);
+        info_buf[3][sizeof(info_buf[3]) - 1] = '\0';
         format_size(used, unit,
                     info_buf[3] + strlen(info_buf[3]),
                     sizeof(info_buf[3]) - strlen(info_buf[3]));
-        strcpy(info_buf[4], ">Free size: ");
+        
+        strncpy(info_buf[4], ">Free size: ", sizeof(info_buf[4]) - 1);
+        info_buf[4][sizeof(info_buf[4]) - 1] = '\0';
         format_size(free_spc, unit,
                     info_buf[4] + strlen(info_buf[4]),
                     sizeof(info_buf[4]) - strlen(info_buf[4]));
     } else {
-        strcpy(info_buf[2], ">Total size: N/A");
-        strcpy(info_buf[3], ">Using size: N/A");
-        strcpy(info_buf[4], ">Free size: N/A");
+        strncpy(info_buf[2], ">Total size: N/A", sizeof(info_buf[2]) - 1);
+        strncpy(info_buf[3], ">Using size: N/A", sizeof(info_buf[3]) - 1);
+        strncpy(info_buf[4], ">Free size: N/A", sizeof(info_buf[4]) - 1);
+        info_buf[2][sizeof(info_buf[2]) - 1] = '\0';
+        info_buf[3][sizeof(info_buf[3]) - 1] = '\0';
+        info_buf[4][sizeof(info_buf[4]) - 1] = '\0';
     }
 
     // SDカード状態判定
-    int sd_check_fd = sys_open("crd0\\SDCheck.check", 0);
-    if (sd_check_fd == -33) {  // 未挿入
-        strcpy(info_buf[5], "SD Card Drive: Not Mounted");
-        strcpy(info_buf[6], ">Total size: N/A");
-        strcpy(info_buf[7], ">Using size: N/A");
-        strcpy(info_buf[8], ">Free size: N/A");
-    } else if (sd_check_fd == 0 || sd_check_fd == -13 || sd_check_fd == -11) { // 挿入済み
-        strcpy(info_buf[5], "SD Card Drive: Mounted");
+    unsigned long sd_total = 0, sd_free = 0, sd_used = 0;
+    int sd_status = sys_totaldiskspace(drive[1], &sd_total);
+    
+    if (sd_status == -33) {  // カード未挿入
+        strncpy(info_buf[5], "SD Card Drive: Not Mounted", sizeof(info_buf[5]) - 1);
+        strncpy(info_buf[6], ">Total size: N/A", sizeof(info_buf[6]) - 1);
+        strncpy(info_buf[7], ">Using size: N/A", sizeof(info_buf[7]) - 1);
+        strncpy(info_buf[8], ">Free size: N/A", sizeof(info_buf[8]) - 1);
+        info_buf[5][sizeof(info_buf[5]) - 1] = '\0';
+        info_buf[6][sizeof(info_buf[6]) - 1] = '\0';
+        info_buf[7][sizeof(info_buf[7]) - 1] = '\0';
+        info_buf[8][sizeof(info_buf[8]) - 1] = '\0';
+    } else if (sd_status == 0) { // 挿入済み且つ容量取得成功
+        strncpy(info_buf[5], "SD Card Drive: Mounted", sizeof(info_buf[5]) - 1);
+        info_buf[5][sizeof(info_buf[5]) - 1] = '\0';
 
-        // 容量取得
-        unsigned long sd_total = 0, sd_free = 0, sd_used = 0;
-        if (sys_totaldiskspace(drive[1], &sd_total) == 0 &&
-            sys_freediskspace(drive[1], &sd_free) == 0) {
+        if (sys_freediskspace(drive[1], &sd_free) == 0) {
             sd_used = sd_total - sd_free;
 
-            strcpy(info_buf[6], ">Total size: ");
+            strncpy(info_buf[6], ">Total size: ", sizeof(info_buf[6]) - 1);
+            info_buf[6][sizeof(info_buf[6]) - 1] = '\0';
             format_size(sd_total, unit,
                         info_buf[6] + strlen(info_buf[6]),
                         sizeof(info_buf[6]) - strlen(info_buf[6]));
-            strcpy(info_buf[7], ">Using size: ");
+            
+            strncpy(info_buf[7], ">Using size: ", sizeof(info_buf[7]) - 1);
+            info_buf[7][sizeof(info_buf[7]) - 1] = '\0';
             format_size(sd_used, unit,
                         info_buf[7] + strlen(info_buf[7]),
                         sizeof(info_buf[7]) - strlen(info_buf[7]));
-            strcpy(info_buf[8], ">Free size: ");
+            
+            strncpy(info_buf[8], ">Free size: ", sizeof(info_buf[8]) - 1);
+            info_buf[8][sizeof(info_buf[8]) - 1] = '\0';
             format_size(sd_free, unit,
                         info_buf[8] + strlen(info_buf[8]),
                         sizeof(info_buf[8]) - strlen(info_buf[8]));
         } else {
-            strcpy(info_buf[6], ">Total size: Unknown");
-            strcpy(info_buf[7], ">Using size: Unknown");
-            strcpy(info_buf[8], ">Free size: Unknown");
+            strncpy(info_buf[6], ">Total size: Unknown", sizeof(info_buf[6]) - 1);
+            strncpy(info_buf[7], ">Using size: Unknown", sizeof(info_buf[7]) - 1);
+            strncpy(info_buf[8], ">Free size: Unknown", sizeof(info_buf[8]) - 1);
+            info_buf[6][sizeof(info_buf[6]) - 1] = '\0';
+            info_buf[7][sizeof(info_buf[7]) - 1] = '\0';
+            info_buf[8][sizeof(info_buf[8]) - 1] = '\0';
         }
-
-    } else if (sd_check_fd == -2) { // 無効
-        strcpy(info_buf[5], "SD Card Drive: Not valid");
-        strcpy(info_buf[6], ">Total size: N/A");
-        strcpy(info_buf[7], ">Using size: N/A");
-        strcpy(info_buf[8], ">Free size: N/A");
+    } else { // その他のエラー（通常は -2 = ドライブ無効）
+        strncpy(info_buf[5], "SD Card Drive: Not valid", sizeof(info_buf[5]) - 1);
+        strncpy(info_buf[6], ">Total size: N/A", sizeof(info_buf[6]) - 1);
+        strncpy(info_buf[7], ">Using size: N/A", sizeof(info_buf[7]) - 1);
+        strncpy(info_buf[8], ">Free size: N/A", sizeof(info_buf[8]) - 1);
+        info_buf[5][sizeof(info_buf[5]) - 1] = '\0';
+        info_buf[6][sizeof(info_buf[6]) - 1] = '\0';
+        info_buf[7][sizeof(info_buf[7]) - 1] = '\0';
+        info_buf[8][sizeof(info_buf[8]) - 1] = '\0';
     }
 
     info_list(info_items, 9);
