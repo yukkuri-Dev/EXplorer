@@ -20,7 +20,7 @@ Beginners are welcome.
 In fact, I am a beginner myself and make extensive use of AI.
 ---
 
-このリポジトリは CASIO 製電子辞書 EX-word の DATAPLUS 5/6/7 で動作するファイルマネージャーです。まだ開発中のため内部ストレージのrootしか読み込めませんし、ファイル移動、ファイルの名称変更、コピー、などの機能もまだ未実装です。
+このリポジトリは CASIO 製電子辞書 EX-word の DATAPLUS 5/6/7 で動作するファイルマネージャーです。まだ開発中のためかなりの機能が利用できません、例えば、第二SDカードの閲覧、リネーム、コピーしたファイルの閲覧(なぜかできない)
 
 GPL-2.0 でライセンスされている [Gnuboy EX](https://github.com/brijohn/gnuboy-ex) プロジェクトをベースに作成しているため、その規定に従い本リポジトリも [GPL-2.0](COPYING) でライセンスします。
 
