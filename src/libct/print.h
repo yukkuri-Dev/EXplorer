@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <libdataplus/graphics/color.h>
 #include <libdataplus/graphics/text.h>
 

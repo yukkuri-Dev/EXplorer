@@ -8,8 +8,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <libct/fonts/jpn-font.h>
+#include <stdint.h>
 #define SCREEN_WIDTH 528
 #define SCREEN_HEIGHT 320
+#define MAX_DISPLAY_ITEMS 12
 
 static const char *key_name(int kc) {
     switch (kc) {
@@ -145,6 +147,44 @@ void popup_dialog(const char *message,uint16_t color){
     }
 }
 
+
+
+void info_list(const char **names, int count){
+    if (!names || count <= 0) return;
+
+    ct_screen_clear(create_rgb16(0,0,0));
+    struct font *fnt = get_font();
+
+    ct_print(10, 10, "=== Info List ===", create_rgb16(255, 255, 0));
+    ct_print((SCREEN_WIDTH - strlen("Press ENTER and BACK to Cancel.") * fnt->width) / 2,
+             SCREEN_HEIGHT - fnt->height - 10,
+             "Press ENTER and BACK to Cancel.",
+             create_rgb16(0, 255, 0));
+    lcdc_copy_vram();
+
+    int selected = 0;
+    int scroll = 0;
+
+    /* initial draw */
+    for (int i = 0; i < MAX_DISPLAY_ITEMS && i < count; ++i) {
+        const char *name = names[i];
+        if (!name) name = "(null)";
+        render_text(10, 30 + i * (fnt->height + 2), (char *)name);
+    }
+    /* draw cursor */
+    lcdc_copy_vram();
+    while (1) {
+        keypad_read();
+        if (get_key_state(KEY_ENTER)) {
+            while (get_key_state(KEY_ENTER)) keypad_read();
+            return ;
+        }
+        if (get_key_state(KEY_BACK)) {
+            while (get_key_state(KEY_BACK)) keypad_read();
+            return ;
+        }
+    }
+}
 
 
 

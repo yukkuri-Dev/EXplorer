@@ -1,3 +1,6 @@
+#include <stdint.h>
+
+
 /**
  * @brief ユーザーからの文字列入力ダイアログを表示する。
  * @return 入力された文字列。キャンセルされた場合はNULLを返す。
@@ -18,6 +21,15 @@ int yes_or_no_dialog(const char *message,uint16_t color);
  * @note ユーザーがENTERキーを押すまで表示される。
  */
 void popup_dialog(const char *message,uint16_t color);
+
+/**
+ * @brief ユーザーに情報リストを表示するダイアログを表示する。
+ * @param names 表示する情報名の配列。 
+ * @param count 配列内の情報名の数。
+ * @note ユーザーがENTERキーまたはBACKキーを押すまで表示される。
+ */
+void info_list(const char **names, int count);
+
 
 /**
  * @brief ユーザーにこの操作にはリスクが伴うことを表示する。
