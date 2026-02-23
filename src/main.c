@@ -211,13 +211,15 @@ int main(void) {
                 return 0;
             }
             if (sel == 4) {
-                char src_path[64] ;
-                sprintf(src_path, "%s%s", drive[0], selected_file_copy);  // "\\\\sd0\\TEST"
-                while (get_key_state(KEY_ENTER))
-                {
-                    keypad_read();
+                char *view_path = get_selected_fullpath(path);
+                if (view_path) {
+                    while (get_key_state(KEY_ENTER))
+                    {
+                        keypad_read();
+                    }
+                    Binary_viewer(view_path);
+                    memmgr_free(view_path);
                 }
-                Binary_viewer(src_path);
                 refresh_needed = 1;
                 return 0;
             }
