@@ -123,7 +123,13 @@ int directory_create(char *path,char *file_name){
 
     size_t path_len = strlen(path_clean);
     size_t name_len = file_name ? strlen(file_name) : 0;
-    int need_sep = (path_len == 0 || path_clean[path_len-1] == '\\' || path_clean[path_len-1] == '/') ? 0 : 1;
+    int need_sep;
+    if (path_len == 0) {
+        need_sep = 0;
+    } else {
+        char last = path_clean[path_len - 1];
+        need_sep = (last == '\\' || last == '/') ? 0 : 1;
+    }
     if (path_len + need_sep + name_len + 1 > sizeof(fullpath)) {
         return -3;
     }
