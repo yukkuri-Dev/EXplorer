@@ -56,7 +56,9 @@ void format_size(unsigned long bytes, const char *unit,
 
     // 修正：残り容量を正しく計算
     size_t remaining = (off < len) ? (len - off) : 0;
-    strncat(buf, unit, remaining - 1);
+    if (remaining > 1) {
+        strncat(buf, unit, remaining - 1);
+    }
 }
 
 void system_storage_info_dialog(const char *unit) {
