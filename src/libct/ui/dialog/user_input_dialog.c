@@ -150,7 +150,7 @@ void popup_dialog(const char *message,uint16_t color){
 
 
 void info_list(const char **names, int count){
-    if (!names || count <= 0) return -1;
+    if (!names || count <= 0) return;
 
     ct_screen_clear(create_rgb16(0,0,0));
     struct font *fnt = get_font();
