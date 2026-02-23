@@ -466,10 +466,33 @@ int main(void) {
                 system_storage_info_dialog("bytes");
                 return 0;// ストレージ情報表示
             }else if (sel == 5){
-                            konami_command_warn_dialog();
-                            sys_sdformat();
-                            return 0;
-                        }
+                /* show konami warning (dialog returns 0 on correct sequence, 1 on BACK) */
+                if (konami_command_warn_dialog() == 1) {
+                    /* user cancelled at konami dialog */
+                    refresh_needed = 1;
+                    lcdc_copy_vram();
+                    return 0;
+                }
+
+                popup_dialog("This will ERASE all data on the SD card.", create_rgb16(255, 255, 0));
+                int yn = yes_or_no_dialog("Format SD card?", create_rgb16(255, 0, 0));
+                if (yn == 1) {
+                    /* user selected No */
+                    refresh_needed = 1;
+                    lcdc_copy_vram();
+                    return 0;
+                }
+
+                int fmt_result = sys_sdformat();
+                if (fmt_result == 0) {
+                    popup_dialog("SD card formatted.", create_rgb16(0, 255, 0));
+                } else {
+                    popup_dialog("Failed to format SD card.", create_rgb16(255, 0, 0));
+                }
+                refresh_needed = 1;
+                lcdc_copy_vram();
+                return 0;
+            }
             return 0;
         }
         if (get_key_state(KEY_BACKSPACE)){// 選択されたファイルを削除
