@@ -14,6 +14,7 @@
 #include <libct/ui/dialog/user_input_dialog.h>
 #include <libct/ui/dialog/user_select_dialog.h>
 #include <libct/ui/dialog/system_storage_info.h>
+#include <version.h>
 #define SCREEN_WIDTH 528
 #define SCREEN_HEIGHT 320
 #define MAX_DISPLAY 15  // 画面に表示する最大ファイル数
@@ -609,6 +610,7 @@ int main(void) {
             const char *items[] = {
                 "=== Help ===",
                 "[H] Show Help",
+                "[V] Version Info",
                 "[UP/DOWN] Move Cursor",
                 "[ENTER] Select File/Enter Directory",
                 "[BACK] Go to Root Directory",
@@ -617,10 +619,28 @@ int main(void) {
                 "[BACKSPACE] Delete Selected File/Directory",
                 "[POWER] Exit Application",
             };
-            info_list(items, 9);
+            info_list(items, 10);
           refresh_needed = 1;
           lcdc_copy_vram();
           while (get_key_state(KEY_CHAR_H))
+          {
+              keypad_read();
+          }
+          return 0;
+        }
+        if (get_key_state(KEY_CHAR_V)){// バージョン情報表示
+            const char *items[] = {
+                "=== Version Info ===",
+                "File Manager Beta",
+                "Version:",
+                BUILD_VERSION,
+                "Git Hash:",
+                 BUILD_GIT_HASH,
+            };
+            info_list(items, 6);
+          refresh_needed = 1;
+          lcdc_copy_vram();
+          while (get_key_state(KEY_CHAR_V))
           {
               keypad_read();
           }

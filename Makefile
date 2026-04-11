@@ -10,13 +10,16 @@ MODNAME      := filemgr
 APPTITLE     := File Manager Beta
 APPID        := FILEB
 APPMOD       := $(TARGET).d01
+BUILD_VERSION := 0.1
+BUILD_GIT_HASH := $(shell git describe --tags --always)
+GEN_VERSION_C := src/version_generated.c
 
 SOURCEDIR    := src
 HTMLDIR      := html
 INSTALLDIR   := $(HOME)/.local/share/exword
 BUILDS       := ja cn
 EXCLUDE      :=
-CFILES       := $(filter-out $(EXCLUDE),$(wildcard $(SOURCEDIR)/*.c)) $(wildcard $(SOURCEDIR)/libc/*.c) $(wildcard $(SOURCEDIR)/libct/*.c) $(wildcard $(SOURCEDIR)/libct/fsc/*.c) $(SOURCEDIR)/libct/ui/dialog/user_input_dialog.c $(SOURCEDIR)/libct/ui/dialog/user_select_dialog.c $(SOURCEDIR)/libct/fonts/jpn-font.c $(SOURCEDIR)/libct/ui/dialog/system_storage_info.c $(SOURCEDIR)/libct/ui/dialog/file_copy.c $(SOURCEDIR)/libct/ui/fake_UI/Binary_view.c
+CFILES       := $(filter-out $(EXCLUDE),$(wildcard $(SOURCEDIR)/*.c)) $(wildcard $(SOURCEDIR)/libc/*.c) $(wildcard $(SOURCEDIR)/libct/*.c) $(wildcard $(SOURCEDIR)/libct/fsc/*.c) $(SOURCEDIR)/libct/ui/dialog/user_input_dialog.c $(SOURCEDIR)/libct/ui/dialog/user_select_dialog.c $(SOURCEDIR)/libct/fonts/jpn-font.c $(SOURCEDIR)/libct/ui/dialog/system_storage_info.c $(SOURCEDIR)/libct/ui/dialog/file_copy.c $(SOURCEDIR)/libct/ui/fake_UI/Binary_view.c $(GEN_VERSION_C)
 SFILES       := $(wildcard $(SOURCEDIR)/*.s) $(wildcard $(SOURCEDIR)/libc/*.s)
 OBJECTS      := $(CFILES:.c=.o) $(SFILES:.s=.o)
 
@@ -27,6 +30,12 @@ ASFLAGS      := -Wall -std=gnu17 -m4-nofpu
 
 app: $(addprefix build/,$(addsuffix /$(APPID),$(BUILDS)))
 
+$(GEN_VERSION_C): FORCE
+	@echo "/* Auto-generated version info */" > $@
+	@echo "const char* build_version = \"$(BUILD_VERSION)\";" >> $@
+	@echo "const char* build_git_hash = \"$(BUILD_GIT_HASH)\";" >> $@
+
+
 .SECONDEXPANSION:
 build/%/$(APPID): $(TARGET).d01 $$(wildcard $(HTMLDIR)/$$*/*.htm)
 	@echo building $* version in $@...
@@ -36,6 +45,8 @@ build/%/$(APPID): $(TARGET).d01 $$(wildcard $(HTMLDIR)/$$*/*.htm)
 		sed -e 's/@APPTITLE/$(APPTITLE)/g' -e 's/@APPID/$(APPID)/g' -e 's/@APPMOD/$(APPMOD)/g' $$f > $@/$$(basename $$f); \
 	done
 	@touch $@/fileinfo.cji
+
+
 
 $(TARGET).elf: $(OBJECTS)
 
