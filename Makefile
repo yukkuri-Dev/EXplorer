@@ -10,7 +10,7 @@ MODNAME      := filemgr
 APPTITLE     := File Manager Beta
 APPID        := FILEB
 APPMOD       := $(TARGET).d01
-BUILD_VERSION := 1.0.7
+BUILD_VERSION := 2.0.2
 BUILD_GIT_HASH := $(shell git describe --tags --always)
 GEN_VERSION_H := src/version_generated.h
 
