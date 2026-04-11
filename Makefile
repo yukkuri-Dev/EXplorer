@@ -10,7 +10,7 @@ MODNAME      := filemgr
 APPTITLE     := File Manager Beta
 APPID        := FILEB
 APPMOD       := $(TARGET).d01
-BUILD_VERSION := 0.1
+BUILD_VERSION := 1.0.7
 BUILD_GIT_HASH := $(shell git describe --tags --always)
 GEN_VERSION_C := src/version_generated.c
 
@@ -30,10 +30,17 @@ ASFLAGS      := -Wall -std=gnu17 -m4-nofpu
 
 app: $(addprefix build/,$(addsuffix /$(APPID),$(BUILDS)))
 
-$(GEN_VERSION_C): FORCE
-	@echo "/* Auto-generated version info */" > $@
-	@echo "const char* build_version = \"$(BUILD_VERSION)\";" >> $@
-	@echo "const char* build_git_hash = \"$(BUILD_GIT_HASH)\";" >> $@
+BUILD_GIT_HASH := $(shell git describe --tags --always)
+
+src/version_generated.h: FORCE
+	@mkdir -p src
+	@echo "#ifndef VERSION_H" > $@
+	@echo "#define VERSION_H" >> $@
+	@echo "" >> $@
+	@echo "#define BUILD_VERSION \"$(BUILD_VERSION)\"" >> $@
+	@echo "#define BUILD_GIT_HASH \"$(BUILD_GIT_HASH)\"" >> $@
+	@echo "" >> $@
+	@echo "#endif" >> $@
 
 
 .SECONDEXPANSION:

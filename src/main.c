@@ -14,7 +14,7 @@
 #include <libct/ui/dialog/user_input_dialog.h>
 #include <libct/ui/dialog/user_select_dialog.h>
 #include <libct/ui/dialog/system_storage_info.h>
-#include <version.h>
+#include <version_generated.h>
 #define SCREEN_WIDTH 528
 #define SCREEN_HEIGHT 320
 #define MAX_DISPLAY 15  // 画面に表示する最大ファイル数
