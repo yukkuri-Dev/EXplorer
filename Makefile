@@ -27,7 +27,7 @@ LDFLAGS      := -Wall -std=gnu17 -nostdlib -L$(DEVKITPRO)/libdataplus/lib -ldata
 CFLAGS       := -Wall -std=gnu17 -fno-builtin -I$(DEVKITPRO)/libdataplus/include -I$(SOURCEDIR) -I$(SOURCEDIR)/libc/include -O3 $(CC_OPTS)
 ASFLAGS      := -Wall -std=gnu17 -m4-nofpu
 
-app: $(addprefix build/,$(addsuffix /$(APPID),$(BUILDS)))
+app: $(GEN_VERSION_H)  $(addprefix build/,$(addsuffix /$(APPID),$(BUILDS)))
 
 BUILD_GIT_HASH := $(shell git describe --tags --always)
 
