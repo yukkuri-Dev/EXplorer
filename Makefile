@@ -12,7 +12,6 @@ APPID        := FILEB
 APPMOD       := $(TARGET).d01
 BUILD_VERSION := 1.0.7
 BUILD_GIT_HASH := $(shell git describe --tags --always)
-GEN_VERSION_C := src/version_generated.c
 
 SOURCEDIR    := src
 HTMLDIR      := html
