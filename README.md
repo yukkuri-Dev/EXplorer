@@ -12,12 +12,6 @@ See COPYING for details.
 
 This repository uses the template provided by [brain-hackers/exword-template](https://github.com/brain-hackers/exword-template)
 
-# How can I contribute to this project?
-
-Feel free to submit a pull request with feature improvements or enhancements.
-Please make sure to test your changes and confirm that they do not introduce any bugs.
-Beginners are welcome.
-In fact, I am a beginner myself and make extensive use of AI.
 ---
 
 このリポジトリは CASIO 製電子辞書 EX-word の DATAPLUS 5/6/7 で動作するファイルマネージャーです。まだ開発中のためかなりの機能が利用できません、例えば、第二SDカードの閲覧、リネーム、コピーしたファイルの閲覧(なぜかできない)
@@ -26,11 +20,7 @@ GPL-2.0 でライセンスされている [Gnuboy EX](https://github.com/brijohn
 
 本リポジトリは [brain-hackers/exword-template](https://github.com/brain-hackers/exword-template) というテンプレートを利用しています。
 
-# このプロジェクトに参加するには？
 
-とりあえず、機能改善コードをプルリクエストしてください！(ただし不具合がないか検証してね) 。
-あなたが初心者だったとしても、拒みませんよ 。
-事実、私だってAIをガッツリ利用してる初心者ですから!
 ---
 # Progress
 - [x] show help
