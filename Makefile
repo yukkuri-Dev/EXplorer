@@ -10,6 +10,9 @@ MODNAME      := filemgr
 APPTITLE     := File Manager
 APPID        := FILEM
 APPMOD       := $(TARGET).d01
+BUILD_VERSION := 2.0.2
+BUILD_GIT_HASH := $(shell git describe --tags --always)
+GEN_VERSION_H := src/version_generated.h
 
 SOURCEDIR    := src
 HTMLDIR      := html
@@ -25,7 +28,18 @@ LDFLAGS      := -Wall -std=gnu17 -nostdlib -L$(DEVKITPRO)/libdataplus/lib -ldata
 CFLAGS       := -Wall -std=gnu17 -fno-builtin -I$(DEVKITPRO)/libdataplus/include -I$(SOURCEDIR) -I$(SOURCEDIR)/libc/include -O3 $(CC_OPTS)
 ASFLAGS      := -Wall -std=gnu17 -m4-nofpu
 
-app: $(addprefix build/,$(addsuffix /$(APPID),$(BUILDS)))
+app: $(GEN_VERSION_H) $(addprefix build/,$(addsuffix /$(APPID),$(BUILDS)))
+
+# バージョン情報ヘッダ生成
+$(GEN_VERSION_H): FORCE
+	@mkdir -p src
+	@echo "#ifndef VERSION_H" > $@
+	@echo "#define VERSION_H" >> $@
+	@echo "" >> $@
+	@echo "#define BUILD_VERSION \"$(BUILD_VERSION)\"" >> $@
+	@echo "#define BUILD_GIT_HASH \"$(BUILD_GIT_HASH)\"" >> $@
+	@echo "" >> $@
+	@echo "#endif" >> $@
 
 .SECONDEXPANSION:
 build/%/$(APPID): $(TARGET).d01 $$(wildcard $(HTMLDIR)/$$*/*.htm)
@@ -46,5 +60,9 @@ install: app
 	@echo 'You can now install this app to EX-word by `dict install $(APPID)` in libexword.'
 
 clean:
-	@echo clean $(OBJECTS) $(TARGET).elf $(TARGET).elf.map $(TARGET).d01
-	@rm -fr build $(OBJECTS) $(TARGET).elf $(TARGET).elf.map $(TARGET).d01
+	@echo clean $(OBJECTS) $(TARGET).elf $(TARGET).elf.map $(TARGET).d01 $(GEN_VERSION_H)
+	@rm -fr build $(OBJECTS) $(TARGET).elf $(TARGET).elf.map $(TARGET).d01 $(GEN_VERSION_H)
+
+FORCE:
+
+.PHONY: app install clean FORCE
