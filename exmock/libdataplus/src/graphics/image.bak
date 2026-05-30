@@ -1,0 +1,28 @@
+
+#include <graphics/image.h>
+
+int load_gra(const char * filename, short x, short y)
+{
+	unsigned short header[2];
+	int res;
+	int fd = sys_open(filename, 1);
+	if (fd < 0)
+		return IMG_NOT_FOUND;
+	res = sys_read(fd, (char*)header, 4);
+	if (res != 4) {
+		sys_close(fd);
+		return IMG_INVALID_FORMAT;
+	}
+	if (header[0] & 0x2000 == 0) { 
+		sys_close(fd);
+		return IMG_INVALID_FORMAT;
+	}
+	if ((header[0] & 0xDFFF) > 0x210 || header[1] > 0x140) {
+		sys_close(fd);
+		return IMG_INVALID_FORMAT;
+	}
+	sys_seek(fd, 4, 0);
+	sys_read(fd, (char*)0xac200000, ((header[0] & 0xDFFF) * header[1]) * 2);
+	sys_close(fd);
+	return 0;
+}
